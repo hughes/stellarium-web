@@ -146,6 +146,15 @@ export default {
           that.$store.commit('setCurrentLocation', loc)
         }, (error) => { console.log(error) })
       }
+
+      if (this.$route.hash.startsWith('#observing')) {
+        that.$store.commit('setValue', {varName: 'showObservingPanel', newValue: true})
+        let hashArr = this.$route.hash.split('#')
+        console.log(hashArr)
+        if (hashArr.length > 1) {
+          that.$store.commit('setValue', {varName: 'observingPanelCurrentComponent', newValue: hashArr[2]})
+        }
+      }
     }
   },
   computed: {

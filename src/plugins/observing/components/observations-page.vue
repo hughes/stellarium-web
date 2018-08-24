@@ -7,103 +7,47 @@
 // repository.
 
 <template>
-<div style="height: 100%">
-<v-tabs dark v-model="active" style="height: 0px;">
-  <v-tab key="0"></v-tab>
-  <v-tab key="1"></v-tab>
-  <v-tab key="2"></v-tab>
-</v-tabs>
-<v-tabs-items v-model="active">
+<observing-panel-page>
 
-  <v-tab-item key="0" style="height: 100%">
-    <div style="height: 100%;">
-      <v-toolbar dark dense>
-        <v-btn icon @click.stop.native="hideObservingPanel"><v-icon>close</v-icon></v-btn>
-        <v-spacer></v-spacer>
-        {{ userFirstName }}
-        <v-menu offset-y left>
-          <v-btn icon slot="activator">
-            <v-icon>account_circle</v-icon>
-          </v-btn>
-          <v-list subheader>
-            <v-subheader v-if='userLoggedIn'>Logged as {{ userEmail }}</v-subheader>
-            <v-list-tile v-if='userLoggedIn' avatar @click="showProfilePage()">
-              <v-list-tile-avatar>
-                <v-icon>account_circle</v-icon>
-              </v-list-tile-avatar>
-              <v-list-tile-content>
-                <v-list-tile-title>My Profile</v-list-tile-title>
-              </v-list-tile-content>
-            </v-list-tile>
-            <v-list-tile v-if='userLoggedIn' avatar @click="logout()">
-              <v-list-tile-avatar>
-                <v-icon>exit_to_app</v-icon>
-              </v-list-tile-avatar>
-              <v-list-tile-content>
-                <v-list-tile-title>Logout</v-list-tile-title>
-              </v-list-tile-content>
-            </v-list-tile>
-            <v-list-tile v-if='!userLoggedIn' avatar @click="showLoginPage()">
-              <v-list-tile-avatar>
-                <v-icon>account_box</v-icon>
-              </v-list-tile-avatar>
-              <v-list-tile-content>
-                <v-list-tile-title>Sign In</v-list-tile-title>
-              </v-list-tile-content>
-            </v-list-tile>
-          </v-list>
-        </v-menu>
-      </v-toolbar>
-      <div class="scroll-container">
-        <v-container fluid style="height: 100%">
-          <div v-if="!userLoggedIn" style="text-align: center; margin-bottom: 15px; color: red;">Warning: you are not logged in, you can add and edit observations, but they all will be suppressed if you leave the page, or login with your account.</div>
-          <v-layout row wrap>
-            <v-flex xs12 v-for="obsg in observationGroups" :key="obsg.f1[0].id">
-              <grouped-observations :obsGroupData="obsg" @thumbClicked="thumbClicked"></grouped-observations>
-            </v-flex>
-          </v-layout>
-          <div v-if="showEmptyMessage" style="margin-top: 40vh; text-align: center;">Nothing here yet..<br>Add new observations by clicking on the + button below</div>
-          <v-layout row wrap>
-            <v-btn fab dark absolute color="pink" bottom right class="pink" slot="activator" style="bottom: 16px; margin-right: 10px" @click.stop.native="showObservationDetailsPage()">
-              <v-icon dark>add</v-icon>
-            </v-btn>
-              <v-tooltip left>
-                <span>Log a new Observation</span>
-              </v-tooltip>
-          </v-layout>
-        </v-container>
-      </div>
-    </div>
-  </v-tab-item>
+  <div slot="main_page" class="scroll-container">
+    <v-container fluid style="height: 100%">
+      <div v-if="$store.state.plugins.observing.noctuaSky.status !== 'loggedIn'" style="text-align: center; margin-bottom: 15px; color: red;">Warning: you are not logged in, you can add and edit observations, but they all will be suppressed if you leave the page, or login with your account.</div>
+      <v-layout row wrap>
+        <v-flex xs12 v-for="obsg in observationGroups" :key="obsg.f1[0].id">
+          <grouped-observations :obsGroupData="obsg" @thumbClicked="thumbClicked"></grouped-observations>
+        </v-flex>
+      </v-layout>
+      <div v-if="showEmptyMessage" style="margin-top: 40vh; text-align: center;">Nothing here yet..<br>Add new observations by clicking on the + button below</div>
+      <v-layout row wrap>
+        <v-btn fab dark absolute color="pink" bottom right class="pink" slot="activator" style="bottom: 16px; margin-right: 10px" @click.stop.native="showObservationDetailsPage()">
+          <v-icon dark>add</v-icon>
+        </v-btn>
+          <v-tooltip left>
+            <span>Log a new Observation</span>
+          </v-tooltip>
+      </v-layout>
+    </v-container>
+  </div>
 
-  <v-tab-item key="1" style="height: 100%">
-    <observation-details @back="backFromObservationDetails()" v-model="observationToAdd" :create="createObservation"></observation-details>
-  </v-tab-item>
+  <template slot="sub_pages">
+    <v-tab-item key="3" style="height: 100%">
+      <observation-details @back="backFromObservationDetails()" v-model="observationToAdd" :create="createObservation"></observation-details>
+    </v-tab-item>
+  </template>
 
-  <v-tab-item key="2" style="height: 100%">
-    <signin @back="showMyObservationsPage()"></signin>
-  </v-tab-item>
-
-  <v-tab-item key="3" style="height: 100%">
-    <my-profile @back="showMyObservationsPage()"></my-profile>
-  </v-tab-item>
-
-</v-tabs-items>
-</div>
+</observing-panel-page>
 </template>
 
 <script>
 import GroupedObservations from './grouped-observations.vue'
 import ObservationDetails from './observation-details.vue'
-import Signin from './signin.vue'
-import MyProfile from './my-profile.vue'
+import ObservingPanelPage from '@/components/observing-panel-page.vue'
 import NoctuaSkyClient from '@/assets/noctuasky-client'
 import { swh } from '@/assets/sw_helpers.js'
 
 export default {
   data: function () {
     return {
-      active: null,
       observationToAdd: undefined,
       createObservation: false,
       savedViewSettings: []
@@ -123,12 +67,6 @@ export default {
     })
   },
   methods: {
-    hideObservingPanel: function () {
-      this.$store.commit('toggleBool', 'showObservingPanel')
-    },
-    logout: function () {
-      NoctuaSkyClient.users.logout()
-    },
     saveViewSettings: function () {
       this.savedViewSettings['utc'] = this.$store.state.stel.observer.utc
       this.savedViewSettings['loc'] = this.$store.state.currentLocation
@@ -158,10 +96,7 @@ export default {
       this.createObservation = false
       // Use assign to force triggering the reactive event
       this.observationToAdd = Object.assign({}, obs)
-      this.active = '1'
-    },
-    showMyObservationsPage: function () {
-      this.active = '0'
+      this.active = '3'
     },
     showObservationDetailsPage: function () {
       // Set this to default values
@@ -175,7 +110,7 @@ export default {
       this.saveViewSettings()
       this.observationToAdd = Object.assign({}, obs)
       this.createObservation = true
-      this.active = '1'
+      this.active = '3'
     },
     editNewObservationFromSelection: function () {
       let obs = this.getDefaultObservation()
@@ -186,12 +121,6 @@ export default {
       this.saveViewSettings()
       this.observationToAdd = Object.assign({}, obs)
       this.createObservation = true
-      this.active = '1'
-    },
-    showLoginPage: function () {
-      this.active = '2'
-    },
-    showProfilePage: function () {
       this.active = '3'
     },
     getDefaultObservation: function () {
@@ -223,18 +152,9 @@ export default {
         { $sort: { 'groupDate.max': -1 } }
       ]
       return NoctuaSkyClient.observations.aggregate(aggregator)
-    },
-    userLoggedIn: function () {
-      return this.$store.state.plugins.observing.noctuaSky.status === 'loggedIn'
-    },
-    userFirstName: function () {
-      return this.$store.state.plugins.observing.noctuaSky.user.first_name ? this.$store.state.plugins.observing.noctuaSky.user.first_name : 'Anonymous'
-    },
-    userEmail: function () {
-      return this.$store.state.plugins.observing.noctuaSky.user.email
     }
   },
-  components: { GroupedObservations, ObservationDetails, Signin, MyProfile }
+  components: { GroupedObservations, ObservationDetails, ObservingPanelPage }
 }
 </script>
 
