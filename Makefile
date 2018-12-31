@@ -6,7 +6,7 @@
 # The terms of the AGPL v3 license can be found in the main directory of this
 # repository.
 
-.PHONY: setup build dev
+.PHONY: setup build dev proxy
 
 setup: Dockerfile
 	docker build -t stellarium-web-dev .
@@ -20,3 +20,6 @@ build:
 
 start:
 	cd dist && python -m SimpleHTTPServer
+
+proxy:
+	docker run -p 8090:8090 -v "$(PWD)/proxy/nginx.conf:/etc/nginx/conf.d/default.conf" -d nginx
